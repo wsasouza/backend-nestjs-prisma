@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Post, Prisma } from '@prisma/client';
+import { EntityNotFoundError } from 'src/errors/entity-not-found.error';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -9,12 +10,18 @@ export class PostsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findOne(id: number): Promise<Post | null> {
-    return this.prisma.post.findUnique({
+    const post = await this.prisma.post.findUnique({
       where: { id },
       include: {
         author: true,
       },
     });
+
+    if (!post) {
+      throw new EntityNotFoundError(`Post with id #${id} was not found.`);
+    }
+
+    return post;
   }
 
   async findAll(): Promise<Post[]> {
